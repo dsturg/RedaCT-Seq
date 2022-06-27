@@ -1,7 +1,7 @@
-# RAC-Seq
+# RedaCT-Seq
 Reduction of ac4C and NaBH4 sequencing
 
-Code for processing and analysis of Reduction of ac4C and NaBH4 sequencing (RAC-Seq) data.
+Code for processing and analysis of Reduction of ac4C and NaBH4 sequencing (RedaCT-Seq) data.
 This protocol identifies RNA modifications (specifically, ac4C) by analyzing basecalling changes following reduction of ac4C with Sodium Borohydride (NaBH4).
 
 Prerequisites
