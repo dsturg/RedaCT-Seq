@@ -37,8 +37,7 @@ For example, you can reduce to lines where there is at least one mismatch in eit
   ```sh
     awk 'BEGIN{i=0}{if (i < 1 || ($7 > 0) || ($10 > 0)) { print $0; i++}}'  mpileup_output/mpileup_output_parsed.txt >  mpileup_output/mpileup_output_parsed_filtered.txt
    ```
-4. Open results in R
-Follow the example in the [Markdown file](RedaCT-Seq.md)
+4. Open results in R:  Follow the example in the [Markdown file](RedaCT-Seq.md)
 
 
 
