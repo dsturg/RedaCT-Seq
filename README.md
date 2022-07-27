@@ -23,6 +23,10 @@ This is a list of components needed
 
 
 <!-- WORKFLOW -->
+## Retrieve the data
+   ```sh
+   https://figshare.com/s/d7ab88c65c69ec0e097d
+   ```
 ## Workflow
 1. Perform the pileup
    ```sh
