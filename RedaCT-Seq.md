@@ -1,7 +1,7 @@
 RedaCT-Seq
 ================
 Dave
-2022-07-21
+2022-07-28
 
 ``` r
 ####################################
@@ -15,50 +15,26 @@ Dave
 ####################################
 # Process all mismatches
 ####################################
-pileup <- fread('sampledata/genome_trim_3_chr19_v11_parsed.txt')
+pileup <- fread('sampledata/mpileup_output_chr19_min10_parsed.txt')
 nrow(pileup)
 ```
 
-    ## [1] 11859333
+    ## [1] 9215793
 
 ``` r
-# filter by primary assembly only
-## This also removes HSU13369 (Note - this is in hte transcriptome mapped)
-## In genome, try this for 18s
-#   ACTIONS      QUERY  SCORE START   END QSIZE IDENTITY  CHROM           STRAND  START       END   SPAN
-#-------------------------------------------------------------------------------------------------------
-#browser details RNA18S  1865     1  1871  1871    99.7%  chrUn_gl000220  +      109078    110946   1869
-#browser details RNA18S  1865     1  1871  1871    99.7%  chrUn_gl000220  +      153050    154918   1869
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Optional filter 
+## Reduce to locations on primary assembly 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 mychrs <- c(paste0("chr",seq(1,22,1)),"chrX")
-
-
 pileup <- pileup %>% filter(chr %in% mychrs)
-#pileup2 <- pileup2 %>% filter(chr %in% mychrs)
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Get mismatch percentages
 All.ref <- data.frame(pileup[, c(1:13)], mis_WT_NaBH4=with(pileup, (Sub_0)/(depth_0)), mis_KO_NaBH4=with(pileup, (Sub_1)/(depth_1)), mis_WT_Ctrl=with(pileup, (Sub_2)/(depth_2)),mis_WT_Ctrl_total=with(pileup, ((depth_2) - (Ref_2))/(depth_2)))
 
-head(All.ref)
-```
-
-    ##     chr   loc ref sub depth_0 Ref_0 Sub_0 depth_1 Ref_1 Sub_1 depth_2 Ref_2
-    ## 1 chr19 60745   T   A      10    10     0      10    10     0      18    18
-    ## 2 chr19 60745   T   C      10    10     0      10    10     0      18    18
-    ## 3 chr19 60745   T   G      10    10     0      10    10     0      18    18
-    ## 4 chr19 60746   C   A      10    10     0      10    10     0      17    17
-    ## 5 chr19 60746   C   T      10    10     0      10    10     0      17    17
-    ## 6 chr19 60746   C   G      10    10     0      10    10     0      17    17
-    ##   Sub_2 mis_WT_NaBH4 mis_KO_NaBH4 mis_WT_Ctrl mis_WT_Ctrl_total
-    ## 1     0            0            0           0                 0
-    ## 2     0            0            0           0                 0
-    ## 3     0            0            0           0                 0
-    ## 4     0            0            0           0                 0
-    ## 5     0            0            0           0                 0
-    ## 6     0            0            0           0                 0
-
-``` r
 #Get ratio between samples
 All.ref <- data.frame(All.ref[, c(1:17)], WT_KO_NaBH4_ratio=with(All.ref, mis_WT_NaBH4/mis_KO_NaBH4), WT_WT_Ctrl_ratio=with(All.ref, mis_WT_NaBH4/mis_WT_Ctrl), KO_WT_NaBH4_ratio=with(All.ref, mis_KO_NaBH4/mis_WT_NaBH4))
 
@@ -91,26 +67,13 @@ head(All.ref)
 dim(All.ref)
 ```
 
-    ## [1] 11859333       20
+    ## [1] 9215793      20
 
 ``` r
 # Preserve the unfiltered object under
 # a different name so you can go back to it.
-All.ref.unfiltered <- All.ref
+# All.ref.unfiltered <- All.ref
 
-# Get N's 
-nrow(pileup)
-```
-
-    ## [1] 11859333
-
-``` r
-nrow(All.ref)
-```
-
-    ## [1] 11859333
-
-``` r
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Apply some filters
@@ -125,7 +88,7 @@ dim(All.ref)
     ## [1] 9215793      20
 
 ``` r
-#Filter coverage in Substititute  base for > 4 in either sample
+#Filter coverage in Substitute  base for > 4 in either treated sample
 All.ref <- All.ref %>% filter(Sub_0 >= 4 | Sub_1 >= 4)
 dim(All.ref)
 ```
@@ -133,7 +96,7 @@ dim(All.ref)
     ## [1] 73417    20
 
 ``` r
-#Filter by mismatch fraction >= 1% in either sample
+#Filter by mismatch fraction >= 1% in either treated sample
 All.ref <- All.ref %>% filter(mis_WT_NaBH4 >= 0.01 | mis_KO_NaBH4 >= 0.01)
 dim(All.ref)
 ```
@@ -147,6 +110,7 @@ dim(All.ref)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Combined.ref.allmm <- All.ref
+
 #~~~~~~~~~~~~~~~~~~~~~~~~
 # Append consistent identifiers
 #~~~~~~~~~~~~~~~~~~~~~~~~
@@ -155,56 +119,12 @@ Combined.ref.allmm$locID <- paste0(Combined.ref.allmm$chr,":",Combined.ref.allmm
 Combined.ref.allmm$subID <- paste0(Combined.ref.allmm$chr,":",Combined.ref.allmm$loc,":",Combined.ref.allmm$ref,">",Combined.ref.allmm$sub)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~
-# Save objects
+# Save objects (optional)
 #~~~~~~~~~~~~~~~~~~~~~~~~
 
-dim(Combined.ref.allmm)
-```
+#dim(Combined.ref.allmm)
+#save(Combined.ref.allmm, file="Combined.ref.allmm.Rdata")
 
-    ## [1] 18802    22
-
-``` r
-save(Combined.ref.allmm, file="Combined.ref.allmm.Rdata")
-
-dim(Combined.ref.allmm)
-```
-
-    ## [1] 18802    22
-
-``` r
-head(Combined.ref.allmm)
-```
-
-    ##     chr   loc ref sub depth_0 Ref_0 Sub_0 depth_1 Ref_1 Sub_1 depth_2 Ref_2
-    ## 1 chr19 60887   C   T      13     9     4      31    30     1      18    16
-    ## 2 chr19 60930   C   T      28    26     2      44    38     6      22    20
-    ## 3 chr19 60999   G   A      59    51     8      72    58    14     198   160
-    ## 4 chr19 61001   G   A      59    54     5      72    69     3     197   180
-    ## 5 chr19 61033   A   G      67    62     5      78    68    10     270   258
-    ## 6 chr19 61040   A   G      68    50    18      85    70    15     282   264
-    ##   Sub_2 mis_WT_NaBH4 mis_KO_NaBH4 mis_WT_Ctrl mis_WT_Ctrl_total
-    ## 1     2   0.30769231   0.03225806  0.11111111        0.11111111
-    ## 2     2   0.07142857   0.13636364  0.09090909        0.09090909
-    ## 3    38   0.13559322   0.19444444  0.19191919        0.19191919
-    ## 4    17   0.08474576   0.04166667  0.08629442        0.08629442
-    ## 5    12   0.07462687   0.12820513  0.04444444        0.04444444
-    ## 6    18   0.26470588   0.17647059  0.06382979        0.06382979
-    ##   WT_KO_NaBH4_ratio WT_WT_Ctrl_ratio KO_WT_NaBH4_ratio       locID
-    ## 1         9.5384615        2.7692308         0.1048387 chr19:60887
-    ## 2         0.5238095        0.7857143         1.9090909 chr19:60930
-    ## 3         0.6973366        0.7065120         1.4340278 chr19:60999
-    ## 4         2.0338983        0.9820538         0.4916667 chr19:61001
-    ## 5         0.5820896        1.6791045         1.7179487 chr19:61033
-    ## 6         1.5000000        4.1470588         0.6666667 chr19:61040
-    ##             subID
-    ## 1 chr19:60887:C>T
-    ## 2 chr19:60930:C>T
-    ## 3 chr19:60999:G>A
-    ## 4 chr19:61001:G>A
-    ## 5 chr19:61033:A>G
-    ## 6 chr19:61040:A>G
-
-``` r
 # These are optional to save for diagnostics
 #save(All.ref.unfiltered, file="Robjects/All.ref.unfiltered.Rdata")
 #save(Combined.ref.CT, file="Robjects/Combined.ref.CT_pooled.Rdata")
@@ -299,11 +219,6 @@ par(op)
 # Librarys for conversion for tx space
 
 ``` r
-library('data.table')
-library('dplyr')
-# Make the data directory to the applicable path on your machine
-datadir <- "/Volumes/LRBGE-Branch/Shalini Oberdoerffer lab/manuscripts/5'UTR/ac4C_initiation_5UTR/Figure versions and data/GeneralSourceData/"
-#datadir <- "/Volumes/group02/Shalini Oberdoerffer lab/manuscripts/5'UTR/ac4C_initiation_5UTR/Figure versions and data/GeneralSourceData/"
 library('rtracklayer')
 ```
 
@@ -395,16 +310,18 @@ library('GenomicFeatures')
     ##     select
 
 ``` r
-library('readxl')
-library('stringr')
+library('genomation')
 ```
+
+    ## Loading required package: grid
+
+    ## Warning: replacing previous import 'Biostrings::pattern' by 'grid::pattern' when
+    ## loading 'genomation'
 
 ``` r
-# Load annotation
-print(load(file=paste0(datadir,"annotab.canonical.Rdata")))
+#library('readxl')
+library('stringr')
 ```
-
-    ## [1] "annotab"
 
 ``` r
 #Genomic_candidates <- Combined.ref.allmm[Combined.ref.allmm$Fisher_WT_KO_BH4 <= 0.05,]
@@ -419,9 +336,6 @@ write.table(mybed,file="genomicsites.bed",col.names=F,quote=F,row.names=F,sep="\
 NaBH4sites <- Combined.ref.allmm
 mybed <- genomation::readBed("genomicsites.bed")
 ```
-
-    ## Warning: replacing previous import 'Biostrings::pattern' by 'grid::pattern' when
-    ## loading 'genomation'
 
     ## Rows: 2 Columns: 6
     ## ── Column specification ────────────────────────────────────────────────────────
@@ -442,21 +356,23 @@ dim(mybed)
     ## NULL
 
 ``` r
-mytxcanon <- rtracklayer::import(paste0(datadir,"annotation/ucsc_canonical_genes_chr.sorted.gtf"))
+mytxcanon <- rtracklayer::import("sampledata/genes_chr19.gtf")
 myTxDbcanon <- makeTxDbFromGRanges(mytxcanon)
 
-exon_by_tx_canon_ds <- exonsBy(myTxDbcanon, by="tx", use.names=TRUE)
-mapped_exon_canon_ds <- mapToTranscripts(mybed, exon_by_tx_canon_ds,ignore.strand=FALSE)
+exon_by_tx_canon <- exonsBy(myTxDbcanon, by="tx", use.names=TRUE)
+mapped_exon_canon <- mapToTranscripts(mybed, exon_by_tx_canon,ignore.strand=FALSE)
 
 
-# To get original genomic coords
-#olaps <- findOverlaps(mybed, exon_by_tx_canon_ds,ignore.strand=FALSE, type="within")
+#~~~~~~~~~~~~~~~~~~
+# Tabulate feature lengths
+#~~~~~~~~~~~~~~~~~
 
-## This thread helped me to get this code working:
-#https://www.biostars.org/p/89341/
+transcriptInfo <- transcriptLengths(myTxDbcanon, with.cds_len=TRUE,
+                  with.utr5_len=TRUE, with.utr3_len=TRUE)
 
-gr <-  mapped_exon_canon_ds       
-query.idx <- mcols(mapped_exon_canon_ds)[,1] 
+
+gr <-  mapped_exon_canon       
+query.idx <- mcols(mapped_exon_canon)[,1] 
 query.ids <- mcols(mybed)[,2]
 query.sites <- query.ids[query.idx]
 length(query.sites)
@@ -478,50 +394,56 @@ df <- data.frame(seqnames=seqnames(gr),
 # Adding annotation, feature location
 #~~~~~~~~~~~~~~
         
-df$geneSymbol <- annotab$hg19.kgXref.geneSymbol[match(df$seqnames,annotab$hg19.knownGene.name)]        
-df$UTR5length <- annotab$UTR5length[match(df$seqnames,annotab$hg19.knownGene.name)]        
-df$CDSlength <- annotab$CDSlength[match(df$seqnames,annotab$hg19.knownGene.name)]        
-df$UTR3length <- annotab$UTR3length[match(df$seqnames,annotab$hg19.knownGene.name)]        
+df$txlength <- transcriptInfo$tx_len[match(df$seqnames,transcriptInfo$gene_id)]        
+df$UTR5length <- transcriptInfo$utr5_len[match(df$seqnames,transcriptInfo$gene_id)]        
+df$CDSlength <- transcriptInfo$cds_len[match(df$seqnames,transcriptInfo$gene_id)]        
+df$UTR3length <- transcriptInfo$utr3_len[match(df$seqnames,transcriptInfo$gene_id)]        
 
-myfeaturess <- NULL
+myfeatures <- NULL
 myfeatureposs <- NULL
 
 for (i in 1:nrow(df)) {
 
         myrow <- df[i,]
         mypos <- myrow$starts
-        if (mypos <= myrow$UTR5length) { myfeature = "UTR5" }
-        if (mypos > myrow$UTR5length & mypos <= (myrow$UTR5length + myrow$CDSlength)) { myfeature = "CDS" }
-        if (mypos > (myrow$UTR5length + myrow$CDSlength)) { myfeature = "UTR3" }      
-        myfeaturess <- c(myfeaturess,myfeature)
-        if (myfeature == "UTR5") { myfeaturepos <- mypos }        
-        if (myfeature == "CDS") { myfeaturepos <- mypos - myrow$UTR5length }        
-        if (myfeature == "UTR3") { myfeaturepos <- mypos - myrow$UTR5length - myrow$CDSlength }           
-        myfeatureposs <- c(myfeatureposs,myfeaturepos)
+        if (myrow$CDSlength < 1) {
+          myfeature = "none"
+          myfeatures <- c(myfeatures,myfeature)
+          myfeatureposs <- c(myfeatureposs,mypos)
+        } else {
+                    if (mypos <= myrow$UTR5length) { myfeature = "UTR5" }
+                    if (mypos > myrow$UTR5length & mypos <= (myrow$UTR5length + myrow$CDSlength)) { myfeature = "CDS" }
+                    if (mypos > (myrow$UTR5length + myrow$CDSlength)) { myfeature = "UTR3" }      
+                    myfeatures <- c(myfeatures,myfeature)
+                    if (myfeature == "UTR5") { myfeaturepos <- mypos }        
+                    if (myfeature == "CDS") { myfeaturepos <- mypos - myrow$UTR5length }        
+                    if (myfeature == "UTR3") { myfeaturepos <- mypos - myrow$UTR5length - myrow$CDSlength }           
+                    myfeatureposs <- c(myfeatureposs,myfeaturepos)
+                }
 }
  
-df$feature <- myfeaturess
+df$feature <- myfeatures
 df$feature_pos <- myfeatureposs
 
 table(df$feature)
 ```
 
     ## 
-    ##  CDS UTR3 UTR5 
-    ## 7439 4246  596
+    ##  CDS none UTR3 UTR5 
+    ## 7443  189 4053  596
 
 ``` r
 prop.table(table(df$feature))
 ```
 
     ## 
-    ##        CDS       UTR3       UTR5 
-    ## 0.60573243 0.34573732 0.04853025
+    ##        CDS       none       UTR3       UTR5 
+    ## 0.60605814 0.01538963 0.33002199 0.04853025
 
 ``` r
 df$pos_rel_aTIS <- df$starts - df$UTR5length
-
-
+df$pos_rel_aTIS[df$feature == "none"] <- NA
+df$feature_pos[df$feature == "none"] <- NA
 #~~~~~~~~~~~~~~~~
 # Correct the strand etc
 #~~~~~~~~~~~~~~~~~
@@ -602,7 +524,7 @@ table(NaBH4_join$conversion[NaBH4_join$subID %in% ambiguous_map])
 
 ``` r
 #~~~~~~~~~~~~~~~~~~~~~~~
-# Hoe many have more than one sub?
+# How many have more than one substitution type?
 #~~~~~~~~~~~~~~~~~~~~~~
 
 # Get the table of unique subID and locID pairs
@@ -615,7 +537,7 @@ multiple_subs <- names(multiple_sub_tab[multiple_sub_tab > 1])
 
 #~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~
-# Filter ambig mapping or mulitple subs
+# Filter ambiguous mapping or mulitple subs
 #~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -711,8 +633,6 @@ print(load(file="NaBH4_join_allmm_txmapped.Rdata"))
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-
 #`````````````````````````````
 # Increase minimum depth for comparison to untreated
 # Coverage in Untreated >= 25
@@ -721,35 +641,26 @@ print(load(file="NaBH4_join_allmm_txmapped.Rdata"))
 mycandidates <- NaBH4_join_allmm_pool[NaBH4_join_allmm_pool$depth_2 >= 25 & !(is.na(NaBH4_join_allmm_pool$depth_2)),]
 
 
-#`````````````````````````````
-# Mismatch in WT or KO that is supported by at least 4 reads, at least 1%, and greater than untreated
-#`````````````````````````````
-
-mycandidates <- mycandidates[((mycandidates$Sub_0 >= 4) & (mycandidates$mis_WT_NaBH4 >= 0.01) & (mycandidates$mis_WT_NaBH4 > mycandidates$mis_WT_Ctrl_total)) | 
-                              ((mycandidates$Sub_1 >= 4) & (mycandidates$mis_KO_NaBH4 >= 0.01) & (mycandidates$mis_KO_NaBH4 >mycandidates$mis_WT_Ctrl_total) ) ,]
-
 #~~~~~~~~~~~~~~
 # Add more fields for diagnostics
 #~~~~~~~~~~~~~~
 mycandidates$diffMM <- mycandidates$mis_WT_NaBH4 - mycandidates$mis_KO_NaBH4
 mycandidates$mean_NaBH4_depth <- (mycandidates$depth_0 + mycandidates$depth_1) / 2
-mycandidates$mean_WT_depth <- (mycandidates$depth_0 + mycandidates$depth_2) / 2
-mycandidates$mean_WT_depth <- (mycandidates$depth_0 + mycandidates$depth_2) / 2
 mycandidates$max_NaBH4_MM <- apply(mycandidates[,c("mis_KO_NaBH4","mis_WT_NaBH4")],1,max)
 mycandidates$Perc_max_MM_lost <- (mycandidates$max_NaBH4_MM - mycandidates$mis_WT_Ctrl)/mycandidates$max_NaBH4_MM
 
+#`````````````````````````````
+# 90% mismatches lost
+# This is balanced for WT/KO - takes the maximum of either
+#`````````````````````````````
 prop.table(table(mycandidates$Perc_max_MM_lost > 0.90))
 ```
 
     ## 
     ##     FALSE      TRUE 
-    ## 0.1472753 0.8527247
+    ## 0.2317192 0.7682808
 
 ``` r
-#`````````````````````````````
-# 90% mismatches lost
-# This is balanced for WT/KO - takes the maximum of either
-#`````````````````````````````
 mycandidates <- mycandidates[mycandidates$Perc_max_MM_lost >= 0.9,]
 
 #`````````````````````````````
@@ -757,12 +668,6 @@ mycandidates <- mycandidates[mycandidates$Perc_max_MM_lost >= 0.9,]
 #`````````````````````````````
 mycandidates <- mycandidates[mycandidates$mis_WT_Ctrl_total < 0.01 ,]
 
-dim(mycandidates)
-```
-
-    ## [1] 8561   45
-
-``` r
 #~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Final selection for testing 
@@ -775,37 +680,39 @@ dim(mycandidates)
 #2 Balanced (Applying the same threshold to WT and KO)
 #3 1.25% in WT (As presented in the manuscript)
 
-prefiltered_candidates <- mycandidates
+#prefiltered_candidates <- mycandidates
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Restrict to minimum 1.25% MM in either treated sample
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 balanced_candidates <- mycandidates[mycandidates$mis_WT_NaBH4 >= 0.0125 | mycandidates$mis_KO_NaBH4 >= 0.0125,]
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Perform FET
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+balanced_candidates$Fisher_WT_KO_BH4 = NA
+for(i in 1:nrow(balanced_candidates)){
+  balanced_candidates$Fisher_WT_KO_BH4[i] = fisher.test(matrix(c(balanced_candidates$Sub_0[i],balanced_candidates$Ref_0[i],balanced_candidates$Sub_1[i],balanced_candidates$Ref_1[i]), nrow=2))$p.value
+}
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# FDR correct
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 balanced_candidates$Fisher_WT_KO_BH4.adj <- p.adjust(balanced_candidates$Fisher_WT_KO_BH4,method="BH")
-
-wtcandidates <- mycandidates %>% filter(mis_WT_NaBH4 >= 0.0125)
-wtcandidates$Fisher_WT_KO_BH4.adj <- p.adjust(wtcandidates$Fisher_WT_KO_BH4,method="BH")
-
-ncol(prefiltered_candidates)
 ```
 
-    ## [1] 45
+# Volcano
+
+# (1.25% in either WT or KO, FDR adjusted)
 
 ``` r
-ncol(balanced_candidates)
-```
-
-    ## [1] 46
-
-``` r
-ncol(wtcandidates)
-```
-
-    ## [1] 46
-
-# Volcano as in manuscript
-
-# (1.25% in WT, FDR adjusted)
-
-``` r
-candidates <- wtcandidates
+candidates <- balanced_candidates
 
 #~~~~~~~~~~~~~~~~~~~~~
 # Now filter with WT / NAT10 comparison
@@ -817,7 +724,7 @@ mysig_allmm <- candidates[candidates$Fisher_WT_KO_BH4.readj <= myp & candidates$
 dim(mysig_allmm)
 ```
 
-    ## [1]  0 46
+    ## [1]  0 45
 
 ``` r
 table(mysig_allmm$conversion)
@@ -873,7 +780,7 @@ myset <- candidates[candidates$conversion == "C>T",]
 # Color coding by sig
 #~~~~~~~~~~~~~~~~~~~~~
 plot(myx,myy,main=paste0(
-  "C>T conversion rate \ndifferences (WT vs NAT10-/-)"),xlab="FC",ylab="-log10(P adj)",col="grey40",las=1,xlim=c(-6,6),ylim=c(0,5),pch=19)
+  "C>T conversion rate \ndifferences (WT vs NAT10-/-)"),xlab="FC",ylab="-log10(P adj)",col="grey40",las=1,xlim=c(-6,6),pch=19)
     points(myx.wt,myy.wt,col="red",pch=19)
     points(myx.ko,myy.ko,col="blue",pch=19)
 abline(v=0,col="red",lwd=1)
@@ -891,7 +798,7 @@ table(mysig.wt$conversion)
 
     ## 
     ## C>T 
-    ## 135
+    ##  55
 
 ``` r
 #~~~~~~~~~~~~~~~~~~~~~
@@ -901,12 +808,12 @@ table(mysig.wt$conversion)
 dim(mysig_allmm)
 ```
 
-    ## [1]  0 46
+    ## [1]  0 45
 
 # Volcanos of all mismatch types with same parameters as above
 
 ``` r
-candidates <- wtcandidates
+candidates <- balanced_candidates
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Variation - PLotting as unadj p, different cutoff
@@ -918,7 +825,7 @@ conv_tab[order(conv_tab)]
 
     ## 
     ##  C>G  A>C  G>C  T>A  C>A  T>G  G>A  A>G  A>T  G>T  T>C  C>T 
-    ##   13   17   21   23   32   35   38   47   54  284  884 3125
+    ##   14   25   28   33   39   42   44   74   86  298 1283 4061
 
 ``` r
 myconvs <- names(conv_tab)
@@ -999,7 +906,7 @@ conv_tab[order(conv_tab)]
 
     ## 
     ##  C>G  A>C  G>C  T>A  C>A  T>G  G>A  A>G  A>T  G>T  T>C  C>T 
-    ##   14   25   28   33   39   42   44   74   86  298 1280 4029
+    ##   14   25   28   33   39   42   44   74   86  298 1283 4061
 
 ``` r
 myconvs <- names(conv_tab)
@@ -1059,49 +966,77 @@ for (i in 1:length(myconvs)) {
 }
 ```
 
+![](RedaCT-Seq_files/figure-gfm/volcano_CT_balanced_unadj-1.png)<!-- -->
+
+``` r
+par(op)
+```
+
+# C\>T, unadj p-val, balanced candidates
+
+``` r
+candidates <- balanced_candidates
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Variation - PLotting as unadj p, different cutoff
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+# Set cutoff
+
+myp <- 0.01
+myratio <- 5
+
+
+  myconv <- myconvs[i]
+  myset <- candidates[candidates$conversion %in% "C>T",]
+  
+  
+  myx <- log2(myset$WT_KO_NaBH4_ratio)
+    myy <- -log10(myset$Fisher_WT_KO_BH4)
+    myy[myy >= 10] <- 10
+    myx[myx >= 6] <- 6
+    myy[myy <= -10] <- -10
+    myx[myx <= -6] <- -6
+
+    # Get the sigs
+    mysig.wt <- myset[myset$Fisher_WT_KO_BH4 <= myp & myset$WT_KO_NaBH4_ratio >= myratio,]
+    #mysig.wt.ct <- mysig.wt[mysig.wt$conversion == "C>T",]
+    myx.wt <- log2(mysig.wt$WT_KO_NaBH4_ratio)
+    myy.wt <- -log10(mysig.wt$Fisher_WT_KO_BH4)
+
+    mysig.ko <- myset[myset$Fisher_WT_KO_BH4 <= myp & myset$WT_KO_NaBH4_ratio <= (1/myratio),]
+    #mysig.ko <- myset[myset$Fisher_WT_KO_BH4 <= myp & myset$KO_WT_NaBH4_ratio >= myratio,]
+    #mysig.ko.ct <- mysig.ko[mysig.ko$conversion == "C>T",]
+    myx.ko <- log2(mysig.ko$WT_KO_NaBH4_ratio)
+    myy.ko <- -log10(mysig.ko$Fisher_WT_KO_BH4)
+
+    myy.wt[myy.wt >= 10] <- 10
+    myx.wt[myx.wt >= 6] <- 6
+    myy.wt[myy.wt <= -10] <- -10
+    myx.wt[myx.wt <= -6] <- -6
+
+    myy.ko[myy.ko >= 10] <- 10
+    myx.ko[myx.ko >= 6] <- 6
+    myy.ko[myy.ko <= -10] <- -10
+    myx.ko[myx.ko <= -6] <- -6  
+    #~~~~~~~~~~~~~~~~~~~~~
+    # Color coding by sig
+    #~~~~~~~~~~~~~~~~~~~~~
+    plot(myx,myy,main=paste0(myconv,
+    " conversion\n(WT vs NAT10-/-)"),xlab="FC",ylab="-log10(P unadj)",col="grey40",las=1,xlim=c(-6,6),pch=19)
+    points(myx.wt,myy.wt,col="red",pch=19)
+    points(myx.ko,myy.ko,col="blue",pch=19)
+    abline(v=0,col="red",lwd=1)
+    abline(v=log2(myratio),col="red",lwd=1,lty=2)   
+    abline(v=log2(1/myratio),col="red",lwd=1,lty=2) 
+    abline(h=-log10(myp),col="red",lwd=1)   
+    legend("top",c(as.character(length(myx.wt)),as.character(length(myx.ko))),pch=19,col=c("red","blue"))
+```
+
 ![](RedaCT-Seq_files/figure-gfm/volcano_allmm_balanced-1.png)<!-- -->
-
-``` r
-par(op)
-```
-
-# Barplot of mismatch counts
-
-## Using the wt candidates set
-
-``` r
-# With the wt candidates
-
-mymm <- wtcandidates
-
-op <- par(mfrow = c(1,2))
-wt_subs <- mymm$Sub_0
-ko_subs <- mymm$Sub_1
-barplot(table(factor(wt_subs,levels=seq(0,10,1))),ylab="Number of sites",xlab="Number of mismatches",main="Mismatches in WT\n(All mismatches, before statistical testing)",las=2)
-barplot(table(factor(ko_subs,levels=seq(0,10,1))),ylab="Number of sites",xlab="Number of mismatches",main="Mismatches in NAT10-/-\n(All mismatches), before statistical testing",las=2)
-```
-
-![](RedaCT-Seq_files/figure-gfm/mm_barplot_wtsites-1.png)<!-- -->
-
-``` r
-par(op)
-
-mymm <- wtcandidates[wtcandidates$conversion == "C>T",]
-
-op <- par(mfrow = c(1,2))
-wt_subs <- mymm$Sub_0
-ko_subs <- mymm$Sub_1
-barplot(table(factor(wt_subs,levels=seq(0,10,1))),ylab="Number of sites",xlab="Number of mismatches",main="Mismatches in WT\n(C>T, before statistical testing)",las=2,ylim=c(0,20000))
-barplot(table(factor(ko_subs,levels=seq(0,10,1))),ylab="Number of sites",xlab="Number of mismatches",main="Mismatches in NAT10-/-\n(C>T, before statistical testing",las=2,ylim=c(0,20000))
-```
-
-![](RedaCT-Seq_files/figure-gfm/mm_barplot_wtsites-2.png)<!-- -->
-
-``` r
-par(op)
-```
-
-## Using the balanced candidates set
+\## Using the balanced candidates set
 
 ``` r
 # With the wt candidates
@@ -1171,11 +1106,11 @@ sessionInfo()
     ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
     ## 
     ## attached base packages:
-    ## [1] parallel  stats4    stats     graphics  grDevices utils     datasets 
-    ## [8] methods   base     
+    ##  [1] grid      parallel  stats4    stats     graphics  grDevices utils    
+    ##  [8] datasets  methods   base     
     ## 
     ## other attached packages:
-    ##  [1] stringr_1.4.0          readxl_1.3.1           GenomicFeatures_1.44.2
+    ##  [1] stringr_1.4.0          genomation_1.24.0      GenomicFeatures_1.44.2
     ##  [4] AnnotationDbi_1.54.1   Biobase_2.52.0         rtracklayer_1.52.1    
     ##  [7] GenomicRanges_1.44.0   GenomeInfoDb_1.28.4    IRanges_2.26.0        
     ## [10] S4Vectors_0.30.2       BiocGenerics_0.38.0    dplyr_1.0.8           
@@ -1191,39 +1126,38 @@ sessionInfo()
     ## [13] seqPattern_1.24.0           tidyselect_1.1.2           
     ## [15] prettyunits_1.1.1           bit_4.0.4                  
     ## [17] curl_4.3.2                  compiler_4.1.1             
-    ## [19] cli_3.2.0                   genomation_1.24.0          
-    ## [21] xml2_1.3.3                  DelayedArray_0.18.0        
-    ## [23] scales_1.1.1                readr_2.1.2                
-    ## [25] rappdirs_0.3.3              digest_0.6.29              
-    ## [27] Rsamtools_2.8.0             rmarkdown_2.13             
-    ## [29] XVector_0.32.0              pkgconfig_2.0.3            
-    ## [31] htmltools_0.5.2             plotrix_3.8-2              
-    ## [33] MatrixGenerics_1.4.3        dbplyr_2.1.1               
-    ## [35] fastmap_1.1.0               BSgenome_1.60.0            
-    ## [37] highr_0.9                   rlang_1.0.2                
-    ## [39] rstudioapi_0.13             RSQLite_2.2.11             
-    ## [41] impute_1.66.0               BiocIO_1.2.0               
-    ## [43] generics_0.1.2              vroom_1.5.7                
-    ## [45] BiocParallel_1.26.2         RCurl_1.98-1.6             
-    ## [47] magrittr_2.0.2              GenomeInfoDbData_1.2.6     
-    ## [49] Matrix_1.4-1                Rcpp_1.0.8.3               
-    ## [51] munsell_0.5.0               fansi_1.0.3                
-    ## [53] lifecycle_1.0.1             stringi_1.7.6              
-    ## [55] yaml_2.3.5                  SummarizedExperiment_1.22.0
-    ## [57] zlibbioc_1.38.0             plyr_1.8.7                 
-    ## [59] BiocFileCache_2.0.0         grid_4.1.1                 
-    ## [61] blob_1.2.2                  crayon_1.5.1               
-    ## [63] lattice_0.20-45             Biostrings_2.60.2          
-    ## [65] hms_1.1.1                   KEGGREST_1.32.0            
-    ## [67] knitr_1.38                  pillar_1.7.0               
-    ## [69] rjson_0.2.21                reshape2_1.4.4             
-    ## [71] biomaRt_2.48.3              XML_3.99-0.9               
-    ## [73] glue_1.6.2                  evaluate_0.15              
-    ## [75] tzdb_0.3.0                  png_0.1-7                  
-    ## [77] vctrs_0.3.8                 cellranger_1.1.0           
-    ## [79] gtable_0.3.0                purrr_0.3.4                
-    ## [81] assertthat_0.2.1            cachem_1.0.6               
-    ## [83] ggplot2_3.3.5               xfun_0.30                  
-    ## [85] gridBase_0.4-7              restfulr_0.0.13            
-    ## [87] tibble_3.1.6                GenomicAlignments_1.28.0   
-    ## [89] memoise_2.0.1               ellipsis_0.3.2
+    ## [19] cli_3.2.0                   xml2_1.3.3                 
+    ## [21] DelayedArray_0.18.0         scales_1.1.1               
+    ## [23] readr_2.1.2                 rappdirs_0.3.3             
+    ## [25] digest_0.6.29               Rsamtools_2.8.0            
+    ## [27] rmarkdown_2.13              XVector_0.32.0             
+    ## [29] pkgconfig_2.0.3             htmltools_0.5.2            
+    ## [31] plotrix_3.8-2               MatrixGenerics_1.4.3       
+    ## [33] dbplyr_2.1.1                fastmap_1.1.0              
+    ## [35] BSgenome_1.60.0             highr_0.9                  
+    ## [37] rlang_1.0.2                 rstudioapi_0.13            
+    ## [39] RSQLite_2.2.11              impute_1.66.0              
+    ## [41] BiocIO_1.2.0                generics_0.1.2             
+    ## [43] vroom_1.5.7                 BiocParallel_1.26.2        
+    ## [45] RCurl_1.98-1.6              magrittr_2.0.2             
+    ## [47] GenomeInfoDbData_1.2.6      Matrix_1.4-1               
+    ## [49] Rcpp_1.0.8.3                munsell_0.5.0              
+    ## [51] fansi_1.0.3                 lifecycle_1.0.1            
+    ## [53] stringi_1.7.6               yaml_2.3.5                 
+    ## [55] SummarizedExperiment_1.22.0 zlibbioc_1.38.0            
+    ## [57] plyr_1.8.7                  BiocFileCache_2.0.0        
+    ## [59] blob_1.2.2                  crayon_1.5.1               
+    ## [61] lattice_0.20-45             Biostrings_2.60.2          
+    ## [63] hms_1.1.1                   KEGGREST_1.32.0            
+    ## [65] knitr_1.38                  pillar_1.7.0               
+    ## [67] rjson_0.2.21                reshape2_1.4.4             
+    ## [69] biomaRt_2.48.3              XML_3.99-0.9               
+    ## [71] glue_1.6.2                  evaluate_0.15              
+    ## [73] tzdb_0.3.0                  png_0.1-7                  
+    ## [75] vctrs_0.3.8                 gtable_0.3.0               
+    ## [77] purrr_0.3.4                 assertthat_0.2.1           
+    ## [79] cachem_1.0.6                ggplot2_3.3.5              
+    ## [81] xfun_0.30                   gridBase_0.4-7             
+    ## [83] restfulr_0.0.13             tibble_3.1.6               
+    ## [85] GenomicAlignments_1.28.0    memoise_2.0.1              
+    ## [87] ellipsis_0.3.2
