@@ -1,24 +1,35 @@
 ---
-title: "RedaCT-Seq"
-author: "Dave"
+title: "RedaC:T-Seq: Analysis example"
+author: "Dave Surgill"
 date: "`r Sys.Date()`"
 output: github_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+# Libraries for primary data processing
 library('data.table')
 library('dplyr')
+# Libraries for conversion for tx space
+library('rtracklayer')
+library('GenomicFeatures')
+library('genomation')
+library('stringr')
 ```
 
 ```{r eval=T}
 
 ####################################
+# RedaC:T-Seq: Analysis example
+#
+# This code demonstrates data analysis on 
+# RedaC:T-Seq pileup results
+#
 # Column order for the data:
 ####################################
 
 # WT NaBH4
-# KO NaBH4
+# KO NaBH4 (NAT10-/-)
 # WT Untreated control
 
 ####################################
@@ -27,28 +38,15 @@ library('dplyr')
 pileup <- fread('sampledata/mpileup_output_chr19_min10_parsed.txt')
 nrow(pileup)
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Optional filter 
-## Reduce to locations on primary assembly 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-mychrs <- c(paste0("chr",seq(1,22,1)),"chrX")
-pileup <- pileup %>% filter(chr %in% mychrs)
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 # Get mismatch percentages
-All.ref <- data.frame(pileup[, c(1:13)], mis_WT_NaBH4=with(pileup, (Sub_0)/(depth_0)), mis_KO_NaBH4=with(pileup, (Sub_1)/(depth_1)), mis_WT_Ctrl=with(pileup, (Sub_2)/(depth_2)),mis_WT_Ctrl_total=with(pileup, ((depth_2) - (Ref_2))/(depth_2)))
+All.ref <- data.frame(pileup, mis_WT_NaBH4=with(pileup, (Sub_0)/(depth_0)), mis_KO_NaBH4=with(pileup, (Sub_1)/(depth_1)), mis_WT_Ctrl=with(pileup, (Sub_2)/(depth_2)),mis_WT_Ctrl_total=with(pileup, ((depth_2) - (Ref_2))/(depth_2)))
 
+#!
 #Get ratio between samples
-All.ref <- data.frame(All.ref[, c(1:17)], WT_KO_NaBH4_ratio=with(All.ref, mis_WT_NaBH4/mis_KO_NaBH4), WT_WT_Ctrl_ratio=with(All.ref, mis_WT_NaBH4/mis_WT_Ctrl), KO_WT_NaBH4_ratio=with(All.ref, mis_KO_NaBH4/mis_WT_NaBH4))
+All.ref <- data.frame(All.ref, WT_KO_NaBH4_ratio=with(All.ref, mis_WT_NaBH4/mis_KO_NaBH4), WT_WT_Ctrl_ratio=with(All.ref, mis_WT_NaBH4/mis_WT_Ctrl), KO_WT_NaBH4_ratio=with(All.ref, mis_KO_NaBH4/mis_WT_NaBH4))
 
 head(All.ref)
 dim(All.ref)
-
-# Preserve the unfiltered object under
-# a different name so you can go back to it.
-# All.ref.unfiltered <- All.ref
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -70,9 +68,10 @@ dim(All.ref)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Obtain ac4C candidate sites ( in balanced fashion (KO and WT))
+# Obtain ac4C candidate sites (in balanced fashion (KO and WT))
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Combined.ref.allmm <- All.ref
 
 #~~~~~~~~~~~~~~~~~~~~~~~~
@@ -98,114 +97,43 @@ Combined.ref.allmm$subID <- paste0(Combined.ref.allmm$chr,":",Combined.ref.allmm
 ## Exploring mismatch profiels before resolving stand 
 ## or performing any filtering
 
-```{r volcano_allmm_wtsites_diagnostics, fig.width=10, fig.height=8}
-Combined.ref.allmm$Fisher_WT_KO_BH4 = NA
-for(i in 1:length(Combined.ref.allmm$chr)){
-  Combined.ref.allmm$Fisher_WT_KO_BH4[i] = fisher.test(matrix(c(Combined.ref.allmm$Sub_0[i],Combined.ref.allmm$Ref_0[i],Combined.ref.allmm$Sub_1[i],Combined.ref.allmm$Ref_1[i]), nrow=2))$p.value
-}
+```{r}
 
 Combined.ref.allmm$genomic_conversion <- paste0(Combined.ref.allmm$ref,">",Combined.ref.allmm$sub)
 
 conv_tab <- table(Combined.ref.allmm$genomic_conversion)
-conv_tab[order(conv_tab)]
-
-myconvs <- names(conv_tab)
-
-# Set cutoff
-
-myp <- 0.01
-myratio <- 5
-
-op <- par(mfrow = c(3,4))
-for (i in 1:length(myconvs)) {
-  
-  myconv <- myconvs[i]
-  myset <- Combined.ref.allmm[Combined.ref.allmm$genomic_conversion %in% myconv,]
-  
-  
-  myx <- log2(myset$WT_KO_NaBH4_ratio)
-	myy <- -log10(myset$Fisher_WT_KO_BH4)
-	myy[myy >= 10] <- 10
-	myx[myx >= 6] <- 6
-	myy[myy <= -10] <- -10
-	myx[myx <= -6] <- -6
-
-	# Get the sigs
-	mysig.wt <- myset[myset$Fisher_WT_KO_BH4 <= myp & myset$WT_KO_NaBH4_ratio >= myratio,]
-	#mysig.wt.ct <- mysig.wt[mysig.wt$conversion == "C>T",]
-	myx.wt <- log2(mysig.wt$WT_KO_NaBH4_ratio)
-	myy.wt <- -log10(mysig.wt$Fisher_WT_KO_BH4)
-
-	#mysig.ko <- myset[myset$Fisher_WT_KO_BH4 <= myp & myset$WT_KO_NaBH4_ratio <= (1/myratio),]
-	mysig.ko <- myset[myset$Fisher_WT_KO_BH4 <= myp & myset$KO_WT_NaBH4_ratio >= myratio,]
-	#mysig.ko.ct <- mysig.ko[mysig.ko$conversion == "C>T",]
-	myx.ko <- log2(mysig.ko$WT_KO_NaBH4_ratio)
-	myy.ko <- -log10(mysig.ko$Fisher_WT_KO_BH4)
-
-	myy.wt[myy.wt >= 10] <- 10
-	myx.wt[myx.wt >= 6] <- 6
-	myy.wt[myy.wt <= -10] <- -10
-	myx.wt[myx.wt <= -6] <- -6
-
-	myy.ko[myy.ko >= 10] <- 10
-	myx.ko[myx.ko >= 6] <- 6
-	myy.ko[myy.ko <= -10] <- -10
-	myx.ko[myx.ko <= -6] <- -6  
-	#~~~~~~~~~~~~~~~~~~~~~
-	# Color coding by sig
-	#~~~~~~~~~~~~~~~~~~~~~
-	plot(myx,myy,main=paste0(myconv,
-	" conversion (raw genomic calls)\n(WT vs NAT10-/-)"),xlab="FC",ylab="-log10(P unadj)",col="grey40",las=1,xlim=c(-6,6),ylim=c(0,10),pch=19)
-	points(myx.wt,myy.wt,col="red",pch=19)
-	points(myx.ko,myy.ko,col="blue",pch=19)
-	abline(v=0,col="red",lwd=1)
-	abline(v=log2(myratio),col="red",lwd=1,lty=2)   
-	abline(v=log2(1/myratio),col="red",lwd=1,lty=2) 
-	abline(h=-log10(myp),col="red",lwd=1)   
-	legend("top",c(as.character(length(myx.wt)),as.character(length(myx.ko))),pch=19,col=c("red","blue"))
-}
-par(op)
+conv_tab[order(conv_tab,decreasing=T)]
 
 ```
 
 
-# Librarys for conversion for tx space
-```{r, eval=T}
-library('rtracklayer')
-library('GenomicFeatures')
-library('genomation')
-#library('readxl')
-library('stringr')
-```
+# Map sites to transcripts   
 
-
-```{r, eval=T}
-
-#Genomic_candidates <- Combined.ref.allmm[Combined.ref.allmm$Fisher_WT_KO_BH4 <= 0.05,]
-mysites <- Combined.ref.allmm
-mybed <- data.frame(chr = mysites$chr,start = format(mysites$loc - 1,scientific=F) ,end = format(mysites$loc,scientific=F),id = mysites$subID,score = 1,strand = "*")
-mybed$start <- str_trim(mybed$start, side = "both")
-mybed$end <- str_trim(mybed$end, side = "both")
-write.table(mybed,file="genomicsites.bed",col.names=F,quote=F,row.names=F,sep="\t")
-```
 
 ```{r MapToTx_set1, eval=T}
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Put sites into BED format 
+# Then re-load via genomation
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 NaBH4sites <- Combined.ref.allmm
+mybed <- data.frame(chr = NaBH4sites$chr,start = format(NaBH4sites$loc - 1,scientific=F) ,end = format(NaBH4sites$loc,scientific=F),id = NaBH4sites$subID,score = 1,strand = "*")
+mybed$start <- str_trim(mybed$start, side = "both")
+mybed$end <- str_trim(mybed$end, side = "both")
+write.table(mybed,file="genomicsites.bed",col.names=F,quote=F,row.names=F,sep="\t")
 mybed <- genomation::readBed("genomicsites.bed")
 
-#mybed <- genomation::readBed("BED/genomicsites_allmm_pool_1percent_KO_birectional_balanced.bed",track.line=FALSE)
-# Note I do this (write out bed, reload in bed) because its the only way I know to get in genomation format
-
-dim(mybed)
+#~~~~~~~~~~~~~~~~~~~~~~
+# Put transcript GTF into
+# compatible objects
+#~~~~~~~~~~~~~~~~~~~~~~
 
 mytxcanon <- rtracklayer::import("sampledata/genes_chr19.gtf")
 myTxDbcanon <- makeTxDbFromGRanges(mytxcanon)
 
 exon_by_tx_canon <- exonsBy(myTxDbcanon, by="tx", use.names=TRUE)
 mapped_exon_canon <- mapToTranscripts(mybed, exon_by_tx_canon,ignore.strand=FALSE)
-
 
 #~~~~~~~~~~~~~~~~~~
 # Tabulate feature lengths
@@ -271,6 +199,7 @@ prop.table(table(df$feature))
 df$pos_rel_aTIS <- df$starts - df$UTR5length
 df$pos_rel_aTIS[df$feature == "none"] <- NA
 df$feature_pos[df$feature == "none"] <- NA
+
 #~~~~~~~~~~~~~~~~
 # Correct the strand etc
 #~~~~~~~~~~~~~~~~~
@@ -292,14 +221,14 @@ NaBH4_join$sub_strandcorrect[NaBH4_join$strand == "-" & NaBH4_join$sub == "T"] <
 
 NaBH4_join$conversion <- paste0(NaBH4_join$ref_strandcorrect,">",NaBH4_join$sub_strandcorrect)
 
+# Examine strand proportions 
 prop.table(table(NaBH4_join$conversion[NaBH4_join$strand == "+"])) * 100
-prop.table(table(NaBH4_join$conversion[NaBH4_join$strand == "-"])) * 100
 
 table(NaBH4_join$conversion)
 prop.table(table(NaBH4_join$conversion))
 
 #~~~~~~~~~~~~~~~~~~~~~~~
-# How many have ambiguous mapping to transcripts?
+# Find cases of ambiguous mapping
 #~~~~~~~~~~~~~~~~~~~~~~
 
 maptab <- table(NaBH4_join$subID)
@@ -308,11 +237,8 @@ length(ambiguous_map)
 table(NaBH4_join$conversion[NaBH4_join$subID %in% ambiguous_map])
 
 #~~~~~~~~~~~~~~~~~~~~~~~
-# How many have more than one substitution type?
+# Find cases of multiple substitution types
 #~~~~~~~~~~~~~~~~~~~~~~
-
-# Get the table of unique subID and locID pairs
-# Find locID (genomic locations) that > 1 subID (substitutions)
 
 testtab <- unique(NaBH4_join[,c("subID","locID")])
 multiple_sub_tab <- table(testtab$locID)
@@ -321,7 +247,7 @@ multiple_subs <- names(multiple_sub_tab[multiple_sub_tab > 1])
 
 #~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~
-# Filter ambiguous mapping or mulitple subs
+# Filter ambiguous mapping or multiple substitutions
 #~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -344,22 +270,13 @@ barplot(table(NaBH4_join_filter$conversion),las=2,main="Substitutions in unfilte
 # Save the results
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-dim(NaBH4_join_filter)
-dim(NaBH4_join)
-NaBH4_join_allmm_pool <- NaBH4_join_filter
-dim(NaBH4_join_allmm_pool)
-save(NaBH4_join_allmm_pool,file="NaBH4_join_allmm_txmapped.Rdata")    
+NaBH4_allmm_txmapped <- NaBH4_join_filter
+save(NaBH4_allmm_txmapped,file="NaBH4_allmm_txmapped.Rdata")    
 
 
 
 
 
-
-```
-
-# Load the object for prototyping below
-```{r eval=F}
-print(load(file="NaBH4_join_allmm_txmapped.Rdata"))
 ```
 
 # Filter and get candidates
@@ -382,8 +299,9 @@ print(load(file="NaBH4_join_allmm_txmapped.Rdata"))
 # Coverage in Untreated >= 25
 #`````````````````````````````
 
-mycandidates <- NaBH4_join_allmm_pool[NaBH4_join_allmm_pool$depth_2 >= 25 & !(is.na(NaBH4_join_allmm_pool$depth_2)),]
+#mycandidates <- NaBH4_join_allmm_pool[NaBH4_join_allmm_pool$depth_2 >= 25 & !(is.na(NaBH4_join_allmm_pool$depth_2)),]
 
+mycandidates <- NaBH4_allmm_txmapped
 
 #~~~~~~~~~~~~~~
 # Add more fields for diagnostics
@@ -445,156 +363,6 @@ balanced_candidates$Fisher_WT_KO_BH4.adj <- p.adjust(balanced_candidates$Fisher_
 
 
 
-
-```
-
-
-# Volcano 
-# (1.25% in either WT or KO, FDR adjusted)
-
-
-```{r volcano_CT_wt, fig.width=5, fig.height=5}
-
-
-candidates <- balanced_candidates
-
-#~~~~~~~~~~~~~~~~~~~~~
-# Now filter with WT / NAT10 comparison
-#~~~~~~~~~~~~~~~~~~~~~
-# With re-FDR adjusted
-myp <- 0.05
-myratio <- 5
-mysig_allmm <- candidates[candidates$Fisher_WT_KO_BH4.readj <= myp & candidates$WT_KO_NaBH4_ratio >= myratio,]
-dim(mysig_allmm)
-table(mysig_allmm$conversion)
-#mysig <- evaluateCutoffsAdj(readj,myp,myratio)
-
-table(mysig_allmm$conversion)
-prop.table(table(mysig_allmm$conversion))
-
-myset <- candidates[candidates$conversion == "C>T",]
-
-	myx <- log2(myset$WT_KO_NaBH4_ratio)
-	myy <- -log10(myset$Fisher_WT_KO_BH4.adj)
-	myy[myy >= 5] <- 5
-	myx[myx >= 6] <- 6
-	myy[myy <= -5] <- -5
-	myx[myx <= -6] <- -6
-	
-  # Get the sigs
-	mysig.wt <- myset[myset$Fisher_WT_KO_BH4.adj <= myp & myset$WT_KO_NaBH4_ratio >= myratio,]
-  #mysig.wt.ct <- mysig.wt[mysig.wt$conversion == "C>T",]
-	myx.wt <- log2(mysig.wt$WT_KO_NaBH4_ratio)
-  myy.wt <- -log10(mysig.wt$Fisher_WT_KO_BH4.adj)
-  
-	mysig.ko <- myset[myset$Fisher_WT_KO_BH4.adj <= myp & myset$WT_KO_NaBH4_ratio <= (1/myratio),]
-	#mysig.ko.ct <- mysig.ko[mysig.ko$conversion == "C>T",]
-  myx.ko <- log2(mysig.ko$WT_KO_NaBH4_ratio)
-  myy.ko <- -log10(mysig.ko$Fisher_WT_KO_BH4.adj)
-
-	myy.wt[myy.wt >= 5] <- 5
-	myx.wt[myx.wt >= 6] <- 6
-	myy.wt[myy.wt <= -5] <- -5
-	myx.wt[myx.wt <= -6] <- -6
-	
-	myy.ko[myy.ko >= 5] <- 5
-	myx.ko[myx.ko >= 6] <- 6
-	myy.ko[myy.ko <= -5] <- -5
-	myx.ko[myx.ko <= -6] <- -6  
-#~~~~~~~~~~~~~~~~~~~~~
-# Color coding by sig
-#~~~~~~~~~~~~~~~~~~~~~
-plot(myx,myy,main=paste0(
-  "C>T conversion rate \ndifferences (WT vs NAT10-/-)"),xlab="FC",ylab="-log10(P adj)",col="grey40",las=1,xlim=c(-6,6),pch=19)
-	points(myx.wt,myy.wt,col="red",pch=19)
-	points(myx.ko,myy.ko,col="blue",pch=19)
-abline(v=0,col="red",lwd=1)
-abline(v=log2(myratio),col="red",lwd=1,lty=2)	
-abline(v=log2(1/myratio),col="red",lwd=1,lty=2)	
-abline(h=-log10(myp),col="red",lwd=1)	
-legend("topright",c(as.character(length(myx.wt)),as.character(length(myx.ko))),pch=19,col=c("red","blue"))
-
-
-table(mysig.wt$conversion)
-#~~~~~~~~~~~~~~~~~~~~~
-# Final set objects
-#~~~~~~~~~~~~~~~~~~~~~
-
-dim(mysig_allmm)
-```
-
-
-# Volcanos of all mismatch types with same parameters as above
-
-
-```{r volcano_allmm_wtsites, fig.width=10, fig.height=8}
-
-
-candidates <- balanced_candidates
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Variation - PLotting as unadj p, different cutoff
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-conv_tab <- table(candidates$conversion)
-conv_tab[order(conv_tab)]
-
-myconvs <- names(conv_tab)
-
-# Set cutoff
-
-myp <- 0.05
-myratio <- 5
-
-op <- par(mfrow = c(3,4))
-for (i in 1:length(myconvs)) {
-  
-  myconv <- myconvs[i]
-  myset <- candidates[candidates$conversion %in% myconv,]
-  
-  
-  myx <- log2(myset$WT_KO_NaBH4_ratio)
-	myy <- -log10(myset$Fisher_WT_KO_BH4.adj)
-	myy[myy >= 10] <- 10
-	myx[myx >= 6] <- 6
-	myy[myy <= -10] <- -10
-	myx[myx <= -6] <- -6
-
-	# Get the sigs
-	mysig.wt <- myset[myset$Fisher_WT_KO_BH4.adj <= myp & myset$WT_KO_NaBH4_ratio >= myratio,]
-	#mysig.wt.ct <- mysig.wt[mysig.wt$conversion == "C>T",]
-	myx.wt <- log2(mysig.wt$WT_KO_NaBH4_ratio)
-	myy.wt <- -log10(mysig.wt$Fisher_WT_KO_BH4.adj)
-
-	mysig.ko <- myset[myset$Fisher_WT_KO_BH4.adj <= myp & myset$WT_KO_NaBH4_ratio <= (1/myratio),]
-	#mysig.ko <- myset[myset$Fisher_WT_KO_BH4 <= myp & myset$KO_WT_NaBH4_ratio >= myratio,]
-	#mysig.ko.ct <- mysig.ko[mysig.ko$conversion == "C>T",]
-	myx.ko <- log2(mysig.ko$WT_KO_NaBH4_ratio)
-	myy.ko <- -log10(mysig.ko$Fisher_WT_KO_BH4.adj)
-
-	myy.wt[myy.wt >= 10] <- 10
-	myx.wt[myx.wt >= 6] <- 6
-	myy.wt[myy.wt <= -10] <- -10
-	myx.wt[myx.wt <= -6] <- -6
-
-	myy.ko[myy.ko >= 10] <- 10
-	myx.ko[myx.ko >= 6] <- 6
-	myy.ko[myy.ko <= -10] <- -10
-	myx.ko[myx.ko <= -6] <- -6  
-	#~~~~~~~~~~~~~~~~~~~~~
-	# Color coding by sig
-	#~~~~~~~~~~~~~~~~~~~~~
-	plot(myx,myy,main=paste0(myconv,
-	" conversion\n(WT vs NAT10-/-)"),xlab="FC",ylab="-log10(P unadj)",col="grey40",las=1,xlim=c(-6,6),ylim=c(0,10),pch=19)
-	points(myx.wt,myy.wt,col="red",pch=19)
-	points(myx.ko,myy.ko,col="blue",pch=19)
-	abline(v=0,col="red",lwd=1)
-	abline(v=log2(myratio),col="red",lwd=1,lty=2)   
-	abline(v=log2(1/myratio),col="red",lwd=1,lty=2) 
-	abline(h=-log10(myp),col="red",lwd=1)   
-	legend("top",c(as.character(length(myx.wt)),as.character(length(myx.ko))),pch=19,col=c("red","blue"))
-}
-par(op)
 
 ```
 
@@ -676,7 +444,7 @@ par(op)
 
 # C>T, unadj p-val, balanced candidates
 
-```{r volcano_allmm_balanced, fig.width=10, fig.height=8}
+```{r volcano_CT_balanced, fig.width=5, fig.height=5}
 
 
 candidates <- balanced_candidates
@@ -693,8 +461,8 @@ myp <- 0.01
 myratio <- 5
 
 
-  myconv <- myconvs[i]
-  myset <- candidates[candidates$conversion %in% "C>T",]
+  myconv <- "C>T"
+  myset <- candidates[candidates$conversion %in% myconv,]
   
   
   myx <- log2(myset$WT_KO_NaBH4_ratio)
@@ -739,38 +507,14 @@ myratio <- 5
 	legend("top",c(as.character(length(myx.wt)),as.character(length(myx.ko))),pch=19,col=c("red","blue"))
 
 ```
-## Using the balanced candidates set
-
-```{r mm_barplot_balanced, fig.width=10, fig.height=5}
 
 
-# With the wt candidates
-
-mymm <- balanced_candidates
-
-op <- par(mfrow = c(1,2))
-wt_subs <- mymm$Sub_0
-ko_subs <- mymm$Sub_1
-barplot(table(factor(wt_subs,levels=seq(0,10,1))),ylab="Number of sites",xlab="Number of mismatches",main="Mismatches in WT\n(All mismatches, before statistical testing)",las=2)
-barplot(table(factor(ko_subs,levels=seq(0,10,1))),ylab="Number of sites",xlab="Number of mismatches",main="Mismatches in NAT10-/-\n(All mismatches), before statistical testing",las=2)
-par(op)
-
-mymm <- balanced_candidates[balanced_candidates$conversion == "C>T",]
-
-op <- par(mfrow = c(1,2))
-wt_subs <- mymm$Sub_0
-ko_subs <- mymm$Sub_1
-barplot(table(factor(wt_subs,levels=seq(0,10,1))),ylab="Number of sites",xlab="Number of mismatches",main="Mismatches in WT\n(C>T, before statistical testing)",las=2,ylim=c(0,20000))
-barplot(table(factor(ko_subs,levels=seq(0,10,1))),ylab="Number of sites",xlab="Number of mismatches",main="Mismatches in NAT10-/-\n(C>T, before statistical testing",las=2,ylim=c(0,20000))
-par(op)
-
-```
 
 # Barplot of N values from the Volcano
 
 ```{r balanced_volcano_Ns, fig.width=5, fig.height=5}
 
-myp <- 0.01
+myp <- 0.05
 myratio <- 5
 
 myset <- balanced_candidates
@@ -780,7 +524,7 @@ mysig.ko <- myset[myset$Fisher_WT_KO_BH4 <= myp & myset$WT_KO_NaBH4_ratio <= (1/
 
 tobar <- rbind(table(factor(mysig.wt$conversion,levels=myconvs)),
                      table(factor(mysig.ko$conversion,levels=myconvs)))
-barplot(tobar,beside=T,col=c("red","blue"),las=1,main="Mismatch calls (All MM types)\nUnadjusted p <= 0.01, Ratio >= 5",legend.text = c("Up in WT","Up in NAT10-/-"),ylab="Number of sites",xlab="Mismatch type",ylim=c(0,8000),las=2)
+barplot(tobar,beside=T,col=c("red","blue"),las=1,main="Mismatch calls (All MM types)\nUnadjusted p <= 0.01, Ratio >= 5",legend.text = c("Up in WT","Up in NAT10-/-"),ylab="Number of sites",xlab="Mismatch type",las=2)
 
 ```
 
