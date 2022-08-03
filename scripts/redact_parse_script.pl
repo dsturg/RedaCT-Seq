@@ -113,6 +113,10 @@ while ($datafile = <DATAFILE>) {
 		@cov_T = () ;
 		@cov_C = () ;
 		@cov_G = () ;
+		
+		#~~~~~~~~~~~~~~~~~~~~
+		# Iterate over each sample
+		#~~~~~~~~~~~~~~~~~~~~
 	
 		for ($j = 0 ; $j < $numsamples ; $j++) {
 			$startpoint = 3 + (11 * $j) ; # This changes with each sample
@@ -136,84 +140,84 @@ while ($datafile = <DATAFILE>) {
 		# The refbase determines what 'substitutions' to report
 		if ($refbase =~ /A/) {
 			# Print T mismatches
-			print $prestring, "\tT\t";
+			print $prestring, "\tT";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_A[$j]\t$cov_T[$j]\t";
+			  print "\t$depth[$j]\t$cov_A[$j]\t$cov_T[$j]";
 			}
 			print "\n";
 			# Print C mismatches
-			print $prestring, "\tC\t";
+			print $prestring, "\tC";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_A[$j]\t$cov_C[$j]\t";
+			  print "\t$depth[$j]\t$cov_A[$j]\t$cov_C[$j]";
 			}
 			print "\n";
 			# Print G mismatches
-			print $prestring, "\tG\t";
+			print $prestring, "\tG";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_A[$j]\t$cov_G[$j]\t";
+			  print "\t$depth[$j]\t$cov_A[$j]\t$cov_G[$j]";
 			}
 			print "\n";
 
 		}		
 		if ($refbase =~ /T/) {
 			# Print A mismatches
-			print $prestring, "\tA\t";
+			print $prestring, "\tA";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_T[$j]\t$cov_A[$j]\t";
+			  print "\t$depth[$j]\t$cov_T[$j]\t$cov_A[$j]";
 			}
 			print "\n";
 			# Print C mismatches
-			print $prestring, "\tC\t";
+			print $prestring, "\tC";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_T[$j]\t$cov_C[$j]\t";
+			  print "\t$depth[$j]\t$cov_T[$j]\t$cov_C[$j]";
 			}
 			print "\n";
 			# Print G mismatches
-			print $prestring, "\tG\t";
+			print $prestring, "\tG";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_T[$j]\t$cov_G[$j]\t";
+			  print "\t$depth[$j]\t$cov_T[$j]\t$cov_G[$j]";
 			}
 			print "\n";
 
 		}		
 		if ($refbase =~ /C/) {
 			# Print A mismatches
-			print $prestring, "\tA\t";
+			print $prestring, "\tA";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_C[$j]\t$cov_A[$j]\t";
+			  print "\t$depth[$j]\t$cov_C[$j]\t$cov_A[$j]";
 			}
 			print "\n";
 			# Print T mismatches
-			print $prestring, "\tT\t";
+			print $prestring, "\tT";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_C[$j]\t$cov_T[$j]\t";
+			  print "\t$depth[$j]\t$cov_C[$j]\t$cov_T[$j]";
 			}
 			print "\n";
 			# Print G mismatches
-			print $prestring, "\tG\t";
+			print $prestring, "\tG";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_C[$j]\t$cov_G[$j]\t";
+			  print "\t$depth[$j]\t$cov_C[$j]\t$cov_G[$j]";
 			}
 			print "\n";
 
 		}		
 		if ($refbase =~ /G/) {
 			# Print A mismatches
-			print $prestring, "\tA\t";
+			print $prestring, "\tA";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_G[$j]\t$cov_A[$j]\t";
+			  print "\t$depth[$j]\t$cov_G[$j]\t$cov_A[$j]";
 			}
 			print "\n";
 			# Print T mismatches
-			print $prestring, "\tT\t";
+			print $prestring, "\tT";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_G[$j]\t$cov_T[$j]\t";
+			  print "\t$depth[$j]\t$cov_G[$j]\t$cov_T[$j]";
 			}
 			print "\n";
 			# Print C mismatches
-			print $prestring, "\tC\t";
+			print $prestring, "\tC";
 			for ($j = 0 ; $j < $numsamples ; $j++) {
-			  print "$depth[$j]\t$cov_G[$j]\t$cov_C[$j]\t";
+			  print "\t$depth[$j]\t$cov_G[$j]\t$cov_C[$j]";
 			}
 			print "\n";
 
