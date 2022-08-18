@@ -1,7 +1,7 @@
 # RedaCT-Seq analysis example code
-NaBH4-induced <ins>Red</ins>uction of <ins>a</ins>c4<ins>C</ins> and conversion to <ins>T</oins>hymidine followed by <ins>seq</ins>uencing
+NaBH4-induced <ins>Red</ins>uction of <ins>a</ins>c4<ins>C</ins> and conversion to <ins>T</ins>hymidine followed by <ins>seq</ins>uencing
 
-Code for processing and analysis of Reduction of ac4C and NaBH4 sequencing (RedaCT-Seq) data.
+Code for processing and analysis of RedaCT-Seq data.
 This protocol identifies RNA modifications (specifically, ac4C) by analyzing basecalling changes following reduction of ac4C with Sodium Borohydride (NaBH4).
 
 
@@ -15,10 +15,10 @@ The steps below will guide through the steps required to perform the analysis. I
 This is a list of components needed:
 * [samtools](http://www.htslib.org/) v.1.11
 * [cutadapt](https://cutadapt.readthedocs.io/en/stable/) v.1.6
-* [STAR aligner] (https://github.com/alexdobin/STAR) v.2.7.5a
-* [mpileup2readcounts] (https://github.com/IARCbioinfo/mpileup2readcounts)
-* [R] (https://www.r-project.org/) v.4.1.1 
-* [R-studio] (https://www.rstudio.com/) v.2022.02.3 Build 492
+* [STAR aligner](https://github.com/alexdobin/STAR) v.2.7.5a
+* [mpileup2readcounts](https://github.com/IARCbioinfo/mpileup2readcounts)
+* [R](https://www.r-project.org/) v.4.1.1 
+* [R-studio](https://www.rstudio.com/) v.2022.02.3 Build 492
 R packages required:
 * data.table v.1.14.2
 Matt Dowle and Arun Srinivasan (2021)

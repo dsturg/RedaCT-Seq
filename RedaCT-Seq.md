@@ -1,7 +1,5 @@
 RedaC:T-Seq: Analysis example
 ================
-Dave Sturgill
-2022-08-18
 
 ``` r
 ####################################
