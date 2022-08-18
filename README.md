@@ -1,5 +1,5 @@
-# RedaCT-Seq
-Reduction of ac4C and NaBH4 sequencing
+# RedaCT-Seq analysis example code
+NaBH4-induced <ins>Red</ins>uction of <ins>a</ins>c4<ins>C</ins> and conversion to <ins>T</oins>hymidine followed by <ins>seq</ins>uencing
 
 Code for processing and analysis of Reduction of ac4C and NaBH4 sequencing (RedaCT-Seq) data.
 This protocol identifies RNA modifications (specifically, ac4C) by analyzing basecalling changes following reduction of ac4C with Sodium Borohydride (NaBH4).
@@ -62,7 +62,7 @@ The repository below includes sample pileup data, corresponding to the input of 
   ```sh
     scripts/redact_parse_script.pl sampledata/mpileup_output_chr19_min10.txt 3 > sampledata/mpileup_output_chr19_min10_parsed.txt ;
    ```
-3. Open results in R:  Downstream analysis is performed in [R] (https://www.r-project.org/).  Follow the example in the [Markdown file](RedaCT-Seq.md)
+3. Open results in R:  Downstream analysis is performed in R (https://www.r-project.org/).  An example analysis is provided in this [Markdown file](RedaCT-Seq.md)
 
 
 <!-- CONTACT -->
