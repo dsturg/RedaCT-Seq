@@ -1,12 +1,12 @@
-RedaC:T-Seq: Analysis example
+RedaC:T-seq: Analysis example
 ================
 
 ``` r
 ####################################
-# RedaC:T-Seq: Analysis example
+# RedaC:T-seq: Analysis example
 #
 # This code demonstrates data analysis on 
-# RedaC:T-Seq pileup results
+# RedaC:T-seq pileup results
 #
 # Column order for the data:
 ####################################
@@ -16,7 +16,7 @@ RedaC:T-Seq: Analysis example
 # WT Untreated control
 
 ####################################
-# Process all mismatches
+# Process all mismatches - load the parsed pileup table
 ####################################
 pileup <- fread('sampledata/mpileup_output_chr19_min10_parsed.txt')
 nrow(pileup)
@@ -106,6 +106,8 @@ Combined.ref.allmm$subID <- paste0(Combined.ref.allmm$chr,":",Combined.ref.allmm
 
 #~~~~~~~~~~~~~~~~~~~~~~~~
 # Optional save point
+# You may save your R object at this point 
+# before proceeding
 #~~~~~~~~~~~~~~~~~~~~~~~~
 ```
 
@@ -139,7 +141,7 @@ mybed <- genomation::readBed("genomicsites.bed")
 # Put transcript GTF into
 # compatible objects
 #~~~~~~~~~~~~~~~~~~~~~~
-
+# This annotation example is provided in the Github repository
 mytxcanon <- rtracklayer::import("sampledata/genes_chr19.gtf")
 myTxDbcanon <- makeTxDbFromGRanges(mytxcanon)
 
@@ -317,13 +319,6 @@ NaBH4_allmm_txmapped <- NaBH4_join_filter
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#`````````````````````````````
-# Increase minimum depth for comparison to untreated
-# Coverage in Untreated >= 25
-#`````````````````````````````
-
-#mycandidates <- NaBH4_join_allmm_pool[NaBH4_join_allmm_pool$depth_2 >= 25 & !(is.na(NaBH4_join_allmm_pool$depth_2)),]
-
 mycandidates <- NaBH4_allmm_txmapped
 
 #~~~~~~~~~~~~~~
@@ -382,7 +377,7 @@ balanced_candidates <- mycandidates[mycandidates$mis_WT_NaBH4 >= 0.0125 | mycand
 
 balanced_candidates$Fisher_WT_KO_BH4 = NA
 for(i in 1:nrow(balanced_candidates)){
-  balanced_candidates$Fisher_WT_KO_BH4[i] = fisher.test(matrix(c(balanced_candidates$Sub_0[i],balanced_candidates$Ref_0[i],balanced_candidates$Sub_1[i],balanced_candidates$Ref_1[i]), nrow=2))$p.value
+  balanced_candidates$Fisher_WT_KO_BH4[i] = fisher.test(matrix(c(balanced_candidates$Sub_0[i],balanced_candidates$Ref_0[i],balanced_candidates$Sub_1[i],balanced_candidates$Ref_1[i]), nrow=2,byrow=T))$p.value
 }
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -484,7 +479,7 @@ sessionInfo()
 
     ## R version 4.0.2 (2020-06-22)
     ## Platform: x86_64-apple-darwin17.0 (64-bit)
-    ## Running under: macOS Catalina 10.15.7
+    ## Running under: macOS  10.16
     ## 
     ## Matrix products: default
     ## BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib

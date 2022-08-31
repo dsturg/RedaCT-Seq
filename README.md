@@ -1,5 +1,5 @@
-# RedaCT-Seq analysis example code
-NaBH4-induced <ins>Red</ins>uction of <ins>a</ins>c4<ins>C</ins> and conversion to <ins>T</ins>hymidine followed by <ins>seq</ins>uencing
+# RedaC:T-seq analysis example code
+#### <i>NaBH4-induced <ins>Red</ins>uction of <ins>a</ins>c4<ins>C</ins> and conversion to <ins>T</ins>hymidine followed by <ins>seq</ins>uencing</i>
 
 Code for processing and analysis of RedaCT-Seq data.
 This protocol identifies RNA modifications (specifically, ac4C) by analyzing basecalling changes following reduction of ac4C with Sodium Borohydride (NaBH4).
@@ -19,6 +19,7 @@ This is a list of components needed:
 * [mpileup2readcounts](https://github.com/IARCbioinfo/mpileup2readcounts)
 * [R](https://www.r-project.org/) v.4.1.1 
 * [R-studio](https://www.rstudio.com/) v.2022.02.3 Build 492
+
 R packages required:
 * data.table v.1.14.2
 Matt Dowle and Arun Srinivasan (2021)
@@ -44,23 +45,22 @@ https://CRAN.R-project.org/package=stringr
 
 <!-- WORKFLOW -->
 ## Retrieve the data
-The repository below includes sample pileup data, corresponding to the input of the parsing step #2 in the Workflow section
+The repository below includes sample pileup data, corresponding to the input of the parsing step #2 in the Workflow section. Step 1 of the workflow shows how this sample data is derived. 
    ```sh
    https://figshare.com/s/d7ab88c65c69ec0e097d
-   (Replace with DOI when complete)
    ```
 ## Workflow
 1. Perform the pileup
    ```sh
-   samtools mpileup -A -R -Q20 -C0 -d 100000 --ff UNMAP,SECONDARY,QCFAIL,DUP -f /data/Soberlab/indexes/STAR/hg19_UCSC/ref.fa WT.BH4.bam KO.BH4.chr19.bam WT.Ctrl.chr19.bam | sed 's/        /    *     */g' | mpileup2readcounts 0 -5 true 0 0 > mpileup_output/mpileup_output.txt ;
+	samtools mpileup -A -R -Q20 -C0 -d 100000 --ff UNMAP,SECONDARY,QCFAIL,DUP -f /data/Soberlab/indexes/STAR/hg19_UCSC/ref.fa WT.BH4.chr19.bam KO.BH4.chr19.bam WT.Ctrl.chr19.bam | sed 's/        /    *     */g' | mpileup2readcounts 0 -5 true 0 0 > mpileup_output/mpileup_output.txt ;
    ```
    To reduce file size, you could require a minimum depth of 10 in each sample, for example:
    ```sh
-   samtools mpileup -A -R -Q20 -C0 -d 100000 --ff UNMAP,SECONDARY,QCFAIL,DUP -f /data/Soberlab/indexes/STAR/hg19_UCSC/ref.fa WT.BH4.bam KO.BH4.chr19.bam WT.Ctrl.chr19.bam | sed 's/        /    *     */g' | mpileup2readcounts 0 -5 true 0 0 | awk '$4 >= 10 && $15 >= 10 && $26 >= 10' > mpileup_output/mpileup_output_chr19_min10.txt ;
+	samtools mpileup -A -R -Q20 -C0 -d 100000 --ff UNMAP,SECONDARY,QCFAIL,DUP -f /data/Soberlab/indexes/STAR/hg19_UCSC/ref.fa WT.BH4.chr19.bam KO.BH4.chr19.bam WT.Ctrl.chr19.bam | sed 's/        /    *     */g' | mpileup2readcounts 0 -5 true 0 0 | awk '$4 >= 10 && $15 >= 10 && $26 >= 10' > mpileup_output/mpileup_output_chr19_min10.txt ;
    ```
 2. Parse the pileup results
   ```sh
-    scripts/redact_parse_script.pl sampledata/mpileup_output_chr19_min10.txt 3 > sampledata/mpileup_output_chr19_min10_parsed.txt ;
+	scripts/redact_parse_script.pl sampledata/mpileup_output_chr19_min10.txt 3 > sampledata/mpileup_output_chr19_min10_parsed.txt ;
    ```
 3. Open results in R:  Downstream analysis is performed in R (https://www.r-project.org/).  An example analysis is provided in this [Markdown file](RedaCT-Seq.md)
 
