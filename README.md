@@ -45,7 +45,7 @@ https://CRAN.R-project.org/package=stringr
 
 <!-- WORKFLOW -->
 ## Retrieve the data
-The repository below includes sample pileup data, corresponding to the input of the parsing step #2 in the Workflow section. Step 1 of the workflow shows how this sample data is derived. 
+The repository below includes sample pileup data, corresponding to the input of the parsing step #2 in the Workflow section. Step #1 of the workflow shows how this sample data is derived. 
    ```sh
    https://figshare.com/s/d7ab88c65c69ec0e097d
    ```
