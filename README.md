@@ -17,7 +17,7 @@ This is a list of components needed:
 * [cutadapt](https://cutadapt.readthedocs.io/en/stable/) v.1.6
 * [STAR aligner](https://github.com/alexdobin/STAR) v.2.7.5a
 * [mpileup2readcounts](https://github.com/IARCbioinfo/mpileup2readcounts)
-* [R](https://www.r-project.org/) v.4.1.1 
+* [R](https://www.r-project.org/) v.4.1.1
 * [R-studio](https://www.rstudio.com/) v.2022.02.3 Build 492
 
 R packages required:
@@ -26,7 +26,7 @@ Matt Dowle and Arun Srinivasan (2021)
 https://CRAN.R-project.org/package=data.table
 * dplyr v.1.0.8
 Hadley Wickham, Romain François, Lionel Henry and Kirill Müller (2022). dplyr: A Grammar of Data Manipulation.
-https://CRAN.R-project.org/package=dplyr 
+https://CRAN.R-project.org/package=dplyr
 * Genomation v1.24.0
 Akalin A, Franke V, Vlahovicek K, Mason CE, Schubeler D, (2014) genomation: a toolkit to summarize, annotate and visualize genomic intervals. Bioinformatics. doi: 10.1093/bioinformatics/btu775
 https://bioconductor.org/packages/release/bioc/html/genomation.html
@@ -45,18 +45,18 @@ https://CRAN.R-project.org/package=stringr
 
 <!-- WORKFLOW -->
 ## Retrieve the data
-The repository below includes sample pileup data, corresponding to the input of the parsing step #2 in the Workflow section. Step #1 of the workflow shows how this sample data is derived. 
+The repository below includes sample pileup data, corresponding to the input of the parsing step #2 in the Workflow section. Step #1 of the workflow shows how this sample data is derived. In this datafile, results for each sample are reported in columns for each reference location ('chr' and 'loc') columns. The reference base refers to the forward strand. Total coverage is given in the 'depth' column, and each base call is given in ACGT/acgt, where the case represents the stand the read mapped to. Note that this differs from a determination of the transcribed strand.
    ```sh
    https://figshare.com/s/d7ab88c65c69ec0e097d
    ```
 ## Workflow
 1. Perform the pileup
    ```sh
-	samtools mpileup -A -R -Q20 -C0 -d 100000 --ff UNMAP,SECONDARY,QCFAIL,DUP -f /data/Soberlab/indexes/STAR/hg19_UCSC/ref.fa WT.BH4.chr19.bam KO.BH4.chr19.bam WT.Ctrl.chr19.bam | sed 's/        /    *     */g' | mpileup2readcounts 0 -5 true 0 0 > mpileup_output/mpileup_output.txt ;
+	samtools mpileup -A -R -Q20 -C0 -d 100000 --ff UNMAP,SECONDARY,QCFAIL,DUP -f /data/indexes/STAR/hg19_UCSC/ref.fa WT.BH4.chr19.bam KO.BH4.chr19.bam WT.Ctrl.chr19.bam | sed 's/        /    *     */g' | mpileup2readcounts 0 -5 true 0 0 > mpileup_output/mpileup_output.txt ;
    ```
    To reduce file size, you could require a minimum depth of 10 in each sample, for example:
    ```sh
-	samtools mpileup -A -R -Q20 -C0 -d 100000 --ff UNMAP,SECONDARY,QCFAIL,DUP -f /data/Soberlab/indexes/STAR/hg19_UCSC/ref.fa WT.BH4.chr19.bam KO.BH4.chr19.bam WT.Ctrl.chr19.bam | sed 's/        /    *     */g' | mpileup2readcounts 0 -5 true 0 0 | awk '$4 >= 10 && $15 >= 10 && $26 >= 10' > mpileup_output/mpileup_output_chr19_min10.txt ;
+	samtools mpileup -A -R -Q20 -C0 -d 100000 --ff UNMAP,SECONDARY,QCFAIL,DUP -f /data/indexes/STAR/hg19_UCSC/ref.fa WT.BH4.chr19.bam KO.BH4.chr19.bam WT.Ctrl.chr19.bam | sed 's/        /    *     */g' | mpileup2readcounts 0 -5 true 0 0 | awk '$4 >= 10 && $15 >= 10 && $26 >= 10' > mpileup_output/mpileup_output_chr19_min10.txt ;
    ```
 2. Parse the pileup results
   ```sh
@@ -70,4 +70,3 @@ The repository below includes sample pileup data, corresponding to the input of 
 Dave Sturgill - dave.sturgill@gmail.com
 or
 Daniel Arango - dany33co@gmail.com
-
