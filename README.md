@@ -4,6 +4,12 @@
 Code for processing and analysis of RedaCT-Seq data.
 This protocol identifies RNA modifications (specifically, ac4C) by analyzing basecalling changes following reduction of ac4C with Sodium Borohydride (NaBH4).
 
+For more detail, please see the corresponding publication:
+
+Sturgill D, Arango D, Oberdoerffer S.
+Protocol for base resolution mapping of ac4C using RedaC:T-seq.
+STAR Protoc. 2022 Dec 16;3(4):101858. doi: 10.1016/j.xpro.2022.101858.
+PMID: 36595942; PMCID: PMC9676198.
 
 <!-- GETTING STARTED -->
 ## Getting Started
