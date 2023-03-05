@@ -6,9 +6,9 @@ This protocol identifies RNA modifications (specifically, ac4C) by analyzing bas
 
 For more detail, please see the corresponding publication:
 
-Sturgill D, Arango D, Oberdoerffer S.
-Protocol for base resolution mapping of ac4C using RedaC:T-seq.
-STAR Protoc. 2022 Dec 16;3(4):101858. doi: 10.1016/j.xpro.2022.101858.
+Sturgill D, Arango D, Oberdoerffer S.<br />
+Protocol for base resolution mapping of ac4C using RedaC:T-seq.<br />
+STAR Protoc. 2022 Dec 16;3(4):101858. doi: 10.1016/j.xpro.2022.101858.<br />
 PMID: 36595942; PMCID: PMC9676198.
 
 <!-- GETTING STARTED -->
@@ -27,22 +27,22 @@ This is a list of components needed:
 * [R-studio](https://www.rstudio.com/) v.2022.02.3 Build 492
 
 R packages required:
-* data.table v.1.14.2
+* data.table v.1.14.2<br />
 Matt Dowle and Arun Srinivasan (2021)
 https://CRAN.R-project.org/package=data.table
-* dplyr v.1.0.8
+* dplyr v.1.0.8<br />
 Hadley Wickham, Romain François, Lionel Henry and Kirill Müller (2022). dplyr: A Grammar of Data Manipulation.
 https://CRAN.R-project.org/package=dplyr
-* Genomation v1.24.0
+* Genomation v1.24.0<br />
 Akalin A, Franke V, Vlahovicek K, Mason CE, Schubeler D, (2014) genomation: a toolkit to summarize, annotate and visualize genomic intervals. Bioinformatics. doi: 10.1093/bioinformatics/btu775
 https://bioconductor.org/packages/release/bioc/html/genomation.html
-* GenomicFeatures v1.44.2
+* GenomicFeatures v1.44.2<br />
 Lawrence M, Huber W, Pages H, Aboyoun P, Carlson M, et al. (2013) Software for Computing and Annotating Genomic Ranges. PLoS Comput Biol 9(8): e1003118. https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html
-* rtracklayer v.1.52.1
+* rtracklayer v.1.52.1<br />
 M. Lawrence, R. Gentleman, V. Carey: "rtracklayer: an {R} package for interfacing with genome browsers". Bioinformatics
   25:1841-1842.
 https://bioconductor.org/packages/release/bioc/html/rtracklayer.html
-* stringr v.1.4.0
+* stringr v.1.4.0<br />
 Hadley Wickham (2019). stringr: Simple, Consistent Wrappers for Common String Operations.
 https://CRAN.R-project.org/package=stringr
 
